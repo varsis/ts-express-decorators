@@ -252,6 +252,8 @@ export class HandlerBuilder {
                         paramValue = converterService.deserialize(paramValue, param.type || param.collectionType, param.collectionType);
                     }
 
+                    InjectorService.emit("$validateInput", paramValue, param);
+
                 } catch (err) {
 
                     /* istanbul ignore next */
