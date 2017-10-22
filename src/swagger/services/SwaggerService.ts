@@ -84,6 +84,7 @@ export class SwaggerService {
         this.expressApplication.get(path, this.uiMiddleware().setup(spec, conf.showExplorer, conf.options || {}, cssContent));
 
         if (conf.validate && conf.specPath && Fs.existsSync(conf.specPath)) {
+          $log.info('Swagger Validation')
           return new Promise((resolve, reject) => {
             return this.validateMiddleware()(conf.specPath, this.expressApplication, (err: any, middleware: any) => {
               if (err) {
