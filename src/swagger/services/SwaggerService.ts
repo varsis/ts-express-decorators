@@ -46,8 +46,18 @@ export class SwaggerService {
       const path = conf && conf.path || "/docs";
 
       $log.info(`Swagger Json is available on http://${host.address}:${host.port}${path}/swagger.json`);
-        this.expressApplication.get(`${path}/swagger.json`, this.onRequest);
+      this.expressApplication.get(`${path}/swagger.json`, this.onRequest);
 
+      if (conf && conf.specPath) {
+        const spec = this.getOpenAPISpec();
+        Fs.writeFileSync(conf.specPath, JSON.stringify(spec, null, 2));
+      }
+    }
+
+    $beforeRoutesInit(): void|Promise<void> {
+      const conf = this.serverSettingsService.get<ISwaggerSettings>("swagger");
+      const host = this.serverSettingsService.getHttpPort();
+      const path = conf && conf.path || "/docs";
       if (conf) {
         let cssContent;
 
@@ -59,18 +69,9 @@ export class SwaggerService {
 
         $log.info(`Swagger UI is available on http://${host.address}:${host.port}${path}`);
 
-          this.expressApplication.use(path, this.uiMiddleware().serve);
+        this.expressApplication.use(path, this.uiMiddleware().serve);
         this.expressApplication.get(path, this.uiMiddleware().setup(spec, conf.showExplorer, conf.options || {}, cssContent));
 
-        if (conf.specPath) {
-          Fs.writeFileSync(conf.specPath, JSON.stringify(spec, null, 2));
-        }
-      }
-    }
-
-    $beforeRoutesInit(): void|Promise<void> {
-      const conf = this.serverSettingsService.get<ISwaggerSettings>("swagger");
-      if (conf)
         if (conf.validate && conf.specPath && Fs.existsSync(conf.specPath)) {
           return new Promise((resolve, reject) => {
             return this.validateMiddleware()(conf.specPath, this.expressApplication, (err: any, middleware: any) => {
@@ -91,6 +92,7 @@ export class SwaggerService {
             });
           });
         }
+      }
     }
 
     private onRequest = (req: any, res: any, next: any) => {
