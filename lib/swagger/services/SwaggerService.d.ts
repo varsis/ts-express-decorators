@@ -1,3 +1,5 @@
+/// <reference types="express" />
+import * as Express from "express";
 import { Spec } from "swagger-schema-official";
 import { ExpressApplication } from "../../core/services/ExpressApplication";
 import { ControllerService } from "../../mvc/services/ControllerService";
@@ -13,6 +15,7 @@ export declare class SwaggerService {
      *
      */
     $afterRoutesInit(): void | Promise<void>;
+    swaggerValidationErrorHandler(error: any, req: Express.Request, res: Express.Response, next: Express.NextFunction): any;
     $beforeRoutesInit(): void | Promise<void>;
     private onRequest;
     /**
