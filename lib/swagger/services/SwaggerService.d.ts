@@ -12,6 +12,7 @@ export declare class SwaggerService {
     /**
      *
      */
+    $afterRoutesInit(): void | Promise<void>;
     $beforeRoutesInit(): void | Promise<void>;
     private onRequest;
     /**
