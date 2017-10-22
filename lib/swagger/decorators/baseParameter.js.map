@@ -1,0 +1,1 @@
+{"version":3,"file":"baseParameter.js","sourceRoot":"","sources":["../../../src/swagger/decorators/baseParameter.ts"],"names":[],"mappings":";;AACA,gDAA6C;AAG7C,uBAA8B,aAAkC;IAC5D,MAAM,CAAC,aAAK,CAAC,QAAQ,CAAC,UAAC,KAAY,EAAE,UAA+B;QAChE,KAAK,CAAC,KAAK,CAAC,eAAe,EAAE,aAAa,CAAC,CAAC;IAChD,CAAC,CAAC,CAAC;AACP,CAAC;AAJD,sCAIC"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"overrideMiddleware.js","sourceRoot":"","sources":["../../../../src/mvc/decorators/class/overrideMiddleware.ts"],"names":[],"mappings":";;AAMA,0EAAuE;AAEvE,4BAAmC,gBAAyC;IACxE,MAAM,CAAC,UAAC,MAAW;QACf,uCAAkB,CAAC,KAAK,CAAC,gBAAgB,EAAE,EAAC,QAAQ,EAAE,MAAM,EAAC,CAAC,CAAC;QAC/D,MAAM,CAAC,MAAM,CAAC;IAClB,CAAC,CAAC;AACN,CAAC;AALD,gDAKC"}

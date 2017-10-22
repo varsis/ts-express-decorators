@@ -1,0 +1,1 @@
+{"version":3,"file":"middleware.js","sourceRoot":"","sources":["../../../../src/mvc/decorators/class/middleware.ts"],"names":[],"mappings":";;AAAA;;GAEG;AACH,MAAM;AACN,gDAAsD;AACtD,0EAAuE;AACvE;;;;GAIG;AACH;IAEI,MAAM,CAAC,UAAC,MAAW;QAEf,uCAAkB,CAAC,KAAK,CAAC,MAAM,EAAE,EAAC,IAAI,EAAE,sBAAc,CAAC,UAAU,EAAC,CAAC,CAAC;QAEpE,MAAM,CAAC,MAAM,CAAC;IAClB,CAAC,CAAC;AACN,CAAC;AARD,gCAQC"}

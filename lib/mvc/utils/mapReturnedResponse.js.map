@@ -1,0 +1,1 @@
+{"version":3,"file":"mapReturnedResponse.js","sourceRoot":"","sources":["../../../src/mvc/utils/mapReturnedResponse.ts"],"names":[],"mappings":";;AAAA,6BAAoC,OAAY;IAC5C,MAAM,CAAC;QACH,WAAW,EAAE,OAAO,CAAC,WAAW;QAChC,IAAI,EAAE,OAAO,CAAC,IAAI,IAAI,OAAO,CAAC,GAAG;QACjC,cAAc,EAAE,OAAO,CAAC,cAAc,IAAI,OAAO,CAAC,UAAU;QAC5D,OAAO,EAAE,OAAO,CAAC,OAAO;KAC3B,CAAC;AACN,CAAC;AAPD,kDAOC"}

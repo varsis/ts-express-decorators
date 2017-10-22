@@ -1,0 +1,1 @@
+{"version":3,"file":"ProviderRegistry.js","sourceRoot":"","sources":["../../../src/di/registries/ProviderRegistry.ts"],"names":[],"mappings":";;;AAAA,gEAA6D;AAC7D;;GAEG;AACH,MAAM;AACN,sDAAmD;AACnD,8CAA2C;AAG9B,QAAA,gBAAgB,GAAG,IAAI,mBAAQ,CAAuC,mBAAQ,CAAC,CAAC;AAE7F;IAAoD,iDAAmD;IACnG;eACI,kBAAM,wBAAgB,CAAC;IAC3B,CAAC;IACL,4BAAC;AAAD,CAAC,AAJD,CAAoD,6BAAa,GAIhE;AAJqB,sDAAqB"}
