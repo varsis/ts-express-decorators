@@ -29,40 +29,64 @@ export class SwaggerService {
 
     }
 
-    private middleware() {
-        return require("swagger-ui-express");
+    private uiMiddleware() {
+      return require("swagger-ui-express");
+    }
+
+    private validateMiddleware() {
+      return require("swagger-express-middleware");
     }
 
     /**
      *
      */
-    $afterRoutesInit() {
-        const conf = this.serverSettingsService.get<ISwaggerSettings>("swagger");
-        const host = this.serverSettingsService.getHttpPort();
-        const path = conf && conf.path || "/docs";
+    $beforeRoutesInit(): void|Promise<void> {
+      const conf = this.serverSettingsService.get<ISwaggerSettings>("swagger");
+      const host = this.serverSettingsService.getHttpPort();
+      const path = conf && conf.path || "/docs";
 
-        $log.info(`Swagger Json is available on http://${host.address}:${host.port}${path}/swagger.json`);
+      $log.info(`Swagger Json is available on http://${host.address}:${host.port}${path}/swagger.json`);
         this.expressApplication.get(`${path}/swagger.json`, this.onRequest);
 
-        if (conf) {
-            let cssContent;
+      if (conf) {
+        let cssContent;
 
-            if (conf.cssPath) {
-                cssContent = Fs.readFileSync(PathUtils.resolve(this.serverSettingsService.resolve(conf.cssPath)), {encoding: "utf8"});
-            }
-
-            const spec = this.getOpenAPISpec();
-
-            $log.info(`Swagger UI is available on http://${host.address}:${host.port}${path}`);
-
-            this.expressApplication.use(path, this.middleware().serve);
-            this.expressApplication.get(path, this.middleware().setup(spec, conf.showExplorer, conf.options || {}, cssContent));
-
-            if (conf.specPath) {
-                Fs.writeFileSync(conf.specPath, JSON.stringify(spec, null, 2));
-            }
+        if (conf.cssPath) {
+          cssContent = Fs.readFileSync(PathUtils.resolve(this.serverSettingsService.resolve(conf.cssPath)), {encoding: "utf8"});
         }
 
+        const spec = this.getOpenAPISpec();
+
+        $log.info(`Swagger UI is available on http://${host.address}:${host.port}${path}`);
+
+          this.expressApplication.use(path, this.uiMiddleware().serve);
+        this.expressApplication.get(path, this.uiMiddleware().setup(spec, conf.showExplorer, conf.options || {}, cssContent));
+
+        if (conf.specPath) {
+          Fs.writeFileSync(conf.specPath, JSON.stringify(spec, null, 2));
+        }
+
+        if (conf.validate) {
+          return new Promise((resolve, reject) => {
+            return this.validateMiddleware()(spec, this.expressApplication, (err: any, middleware: any) => {
+              if (err) {
+                $log.error("Error when binding with the swagger middleware: $err");
+                reject("Error when binding with the swagger middleware");
+              }
+
+              this.expressApplication.use(
+                middleware.metadata(),
+                middleware.files(),
+                middleware.parseRequest(),
+                middleware.validateRequest(),
+              );
+              // .use(swaggerValidationErrorHandler)
+
+              resolve();
+            });
+          });
+        }
+      }
     }
 
     private onRequest = (req: any, res: any, next: any) => {
