@@ -68,6 +68,7 @@ export class SwaggerService {
 
         if (conf.validate) {
           return new Promise((resolve, reject) => {
+            $log.debug(spec);
             return this.validateMiddleware()(spec, this.expressApplication, (err: any, middleware: any) => {
               if (err) {
                 $log.error("Error when binding with the swagger middleware: $err");
