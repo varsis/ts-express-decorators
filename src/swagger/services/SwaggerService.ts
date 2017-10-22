@@ -71,7 +71,7 @@ export class SwaggerService {
     $beforeRoutesInit(): void|Promise<void> {
       const conf = this.serverSettingsService.get<ISwaggerSettings>("swagger");
       if (conf)
-        if (conf.validate && conf.specPath) {
+        if (conf.validate && conf.specPath && Fs.existsSync(conf.specPath)) {
           return new Promise((resolve, reject) => {
             return this.validateMiddleware()(conf.specPath, this.expressApplication, (err: any, middleware: any) => {
               if (err) {
