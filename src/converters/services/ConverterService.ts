@@ -2,19 +2,15 @@ import {BadRequest} from "ts-httpexceptions";
 import {Metadata} from "../../core/class/Metadata";
 import {getClass, isArrayOrArrayClass, isEmpty, isPrimitiveOrPrimitiveClass} from "../../core/utils";
 import {InjectorService} from "../../di";
-/**
- * @module common/converters
- */
-/** */
 import {Service} from "../../di/decorators/service";
-import {PropertyMetadata} from "../class/PropertyMetadata";
+import {PropertyMetadata} from "../../jsonschema/class/PropertyMetadata";
+import {PropertyRegistry} from "../../jsonschema/registries/PropertyRegistry";
 import {CONVERTER} from "../constants/index";
 import {ConverterDeserializationError} from "../errors/ConverterDeserializationError";
 import {ConverterSerializationError} from "../errors/ConverterSerializationError";
 import {RequiredPropertyError} from "../errors/RequiredPropertyError";
 import {UnknowPropertyError} from "../errors/UnknowPropertyError";
 import {IConverter} from "../interfaces/index";
-import {PropertyRegistry} from "../registries/PropertyRegistry";
 
 @Service()
 export class ConverterService {

@@ -1,87 +1,7 @@
-import {ConverterService, JsonProperty} from "../../../../src";
-import {Required} from "../../../../src/mvc/decorators";
+import {ConverterService} from "../../../../src";
 import {inject} from "../../../../src/testing/inject";
+import {JsonFoo, JsonFoo2, JsonFoo3, JsonFoo4} from "../../../helper/classes";
 import {assert, expect} from "../../../tools";
-
-class Foo {
-    @JsonProperty()
-    test: any;
-
-    @JsonProperty()
-    foo: any;
-
-    method() {
-    }
-
-    deserialize(obj: any) {
-        const self: any = this;
-
-        Object.getOwnPropertyNames(obj).forEach((key) => {
-            if (typeof self[key] !== "function") {
-                self[key] = obj[key];
-            }
-        });
-
-    }
-
-    serialize() {
-        return {
-            test: this.test,
-            foo: this.foo
-        };
-    }
-
-}
-
-class Foo2 {
-    @JsonProperty()
-    test: string;
-
-    @JsonProperty("Name")
-    @Required()
-    name: string;
-
-    @JsonProperty()
-    dateStart: Date;
-
-    @JsonProperty()
-    uint: number;
-
-    @JsonProperty()
-    object: any;
-
-    @JsonProperty()
-    foo: Foo;
-
-    @JsonProperty({use: Foo})
-    foos: Foo[];
-
-    @JsonProperty({use: Foo})
-    theMap: Map<string, Foo>;
-
-    @JsonProperty({use: Foo})
-    theSet: Set<Foo>;
-
-    method() {
-
-    }
-}
-
-class Foo3 {
-    toJSON() {
-        return {};
-    }
-}
-
-class Foo4 {
-    @JsonProperty()
-    test: any;
-
-    @JsonProperty()
-    @Required()
-    foo: any;
-}
-
 
 describe("ConverterService", () => {
 
@@ -159,13 +79,13 @@ describe("ConverterService", () => {
                 this.foo = this.converterService.deserialize({
                     test: 1,
                     foo: "test"
-                }, <any>Foo);
+                }, <any>JsonFoo);
             });
 
             after(() => delete this.foo);
 
             it("should be an instance of Foo", () =>
-                expect(this.foo).to.be.instanceof(Foo)
+                expect(this.foo).to.be.instanceof(JsonFoo)
             );
 
             it("should have method named 'method'", () => {
@@ -204,13 +124,13 @@ describe("ConverterService", () => {
                         {test: "13"},
                         {test: "1re"}
                     ]
-                }, Foo2);
+                }, JsonFoo2);
             });
 
             after(() => delete this.foo2);
 
             it("should be an instance of Foo2", () =>
-                expect(this.foo2).to.be.instanceof(Foo2)
+                expect(this.foo2).to.be.instanceof(JsonFoo2)
             );
 
             it("should preserve method", () =>
@@ -224,7 +144,7 @@ describe("ConverterService", () => {
             });
 
             it("should have an attribut that is deserialized as Foo instance", () => {
-                expect(this.foo2.foo).to.be.instanceof(Foo);
+                expect(this.foo2.foo).to.be.instanceof(JsonFoo);
                 expect(this.foo2.foo.test).to.equals("2");
                 expect(this.foo2.object.test).to.equals("2ez");
             });
@@ -236,7 +156,7 @@ describe("ConverterService", () => {
 
                 it(
                     "should have an attribut that is deserialized as an Array with an item that is an instance of Foo", () =>
-                        expect(this.foo2.foos[0]).to.be.instanceof(Foo)
+                        expect(this.foo2.foos[0]).to.be.instanceof(JsonFoo)
                 );
             });
 
@@ -278,8 +198,8 @@ describe("ConverterService", () => {
                             test: 1,
                             foo: "test",
                             notPropertyAllowed: "tst"
-                        }, <any>Foo4),
-                    "Property notPropertyAllowed on class Foo4 is not allowed."
+                        }, <any>JsonFoo4),
+                    "Property notPropertyAllowed on class JsonFoo4 is not allowed."
                 );
             });
         });
@@ -287,20 +207,20 @@ describe("ConverterService", () => {
         describe("when an attribute is required", () => {
             it("should throw a bad request (undefined value)", () => {
                 assert.throws(() => this.converterService.deserialize({
-                    name: undefined
-                }, Foo2), "Property name on class Foo2 is required.");
+                    test: undefined
+                }, JsonFoo2), "Property test on class JsonFoo2 is required.");
             });
 
             it("should throw a bad request (null value)", () => {
                 assert.throws(() => this.converterService.deserialize({
-                    name: null
-                }, Foo2), "Property name on class Foo2 is required.");
+                    test: null
+                }, JsonFoo2), "Property test on class JsonFoo2 is required.");
             });
 
             it("should throw a bad request (empty value)", () => {
                 assert.throws(() => this.converterService.deserialize({
-                    name: ""
-                }, Foo2), "Property name on class Foo2 is required.");
+                    test: ""
+                }, JsonFoo2), "Property test on class JsonFoo2 is required.");
             });
         });
     });
@@ -336,19 +256,21 @@ describe("ConverterService", () => {
 
         describe("class Foo2", () => {
             before(() => {
-                const foo2 = new Foo2();
+                const foo2 = new JsonFoo2();
                 foo2.dateStart = new Date();
+                foo2.test = "Test";
                 foo2.name = "Test";
 
-                const foo = new Foo();
+                const foo = new JsonFoo();
                 foo.test = "test";
 
                 foo2.foos = [foo];
+                foo2.foo = foo;
 
-                foo2.theMap = new Map<string, Foo>();
+                foo2.theMap = new Map<string, JsonFoo>();
                 foo2.theMap.set("newKey", foo);
 
-                foo2.theSet = new Set<Foo>();
+                foo2.theSet = new Set<JsonFoo>();
                 foo2.theSet.add(foo);
 
                 this.foo = this.converterService.serialize(foo2);
@@ -451,7 +373,7 @@ describe("ConverterService", () => {
         });
 
         describe("class Foo3", () => {
-            before(() => this.foo = this.converterService.serialize(new Foo3()));
+            before(() => this.foo = this.converterService.serialize(new JsonFoo3()));
             after(() => delete this.foo);
 
             it("should use toJSON method", () => {
@@ -463,21 +385,21 @@ describe("ConverterService", () => {
             it("should emit a BadRequest when attribute is required", () =>
                 assert.throws(
                     () => {
-                        const foo4: any = new Foo4();
+                        const foo4: any = new JsonFoo4();
                         this.converterService.serialize(foo4);
                     },
-                    "Property foo on class Foo4 is required."
+                    "Property foo on class JsonFoo4 is required."
                 )
             );
 
             it("should emit a BadRequest when attribute is not allowed", () =>
                 assert.throws(
                     () => {
-                        const foo4: any = new Foo4();
+                        const foo4: any = new JsonFoo4();
                         foo4.unknowProperty = "test";
                         this.converterService.serialize(foo4);
                     },
-                    "Property unknowProperty on class Foo4 is not allowed."
+                    "Property unknowProperty on class JsonFoo4 is not allowed."
                 )
             );
         });
