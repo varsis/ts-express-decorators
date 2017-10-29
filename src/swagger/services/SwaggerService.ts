@@ -64,7 +64,7 @@ export class SwaggerService {
 
         $log.info(`Swagger UI is available on http://${host.address}:${host.port}${path}`);
 
-         this.expressApplication.use(path, this.uiMiddleware().serve);
+        this.expressApplication.use(path, this.uiMiddleware().serve);
         this.expressApplication.get(path, this.uiMiddleware().setup(spec, conf.showExplorer, conf.options || {}, cssContent));
 
         $log.info(`Swagger Json is available on http://${host.address}:${host.port}${path}/swagger.json`);
@@ -101,8 +101,7 @@ export class SwaggerService {
     private onRequest = (req: any, res: any, next: any) => {
         if (req.url.indexOf("swagger.json") > -1) {
             const content = this.getOpenAPISpec();
-            res.status(200).json(content);
-            next();
+            res.json(content);
         }
     };
 
