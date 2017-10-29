@@ -46,13 +46,7 @@ export class SwaggerService {
       const host = this.serverSettingsService.getHttpPort();
       const path = conf && conf.path || "/docs";
 
-      $log.info(`Swagger Json is available on http://${host.address}:${host.port}${path}/swagger.json`);
-      this.expressApplication.get(`${path}/swagger.json`, this.onRequest);
 
-      if (conf && conf.specPath) {
-        const spec = this.getOpenAPISpec();
-        Fs.writeFileSync(conf.specPath, JSON.stringify(spec, null, 2));
-      }
     }
 
     swaggerValidationErrorHandler(error: any, req: Express.Request, res: Express.Response, next: Express.NextFunction): any {
@@ -81,12 +75,20 @@ export class SwaggerService {
 
         $log.info(`Swagger UI is available on http://${host.address}:${host.port}${path}`);
 
-        this.expressApplication.use(path, this.uiMiddleware().serve);
+         this.expressApplication.use(path, this.uiMiddleware().serve);
         this.expressApplication.get(path, this.uiMiddleware().setup(spec, conf.showExplorer, conf.options || {}, cssContent));
 
-        if (conf.validate && conf.specPath && Fs.existsSync(conf.specPath)) {
+        $log.info(`Swagger Json is available on http://${host.address}:${host.port}${path}/swagger.json`);
+        this.expressApplication.get(`${path}/swagger.json`, this.onRequest);
+
+        if (conf && conf.specPath) {
+          const spec = this.getOpenAPISpec();
+          Fs.writeFileSync(conf.specPath, JSON.stringify(spec, null, 2));
+        }
+
+        if (conf.validate) {
           return new Promise((resolve, reject) => {
-            return this.validateMiddleware()(conf.specPath, this.expressApplication, (err: any, middleware: any) => {
+            return this.validateMiddleware()(spec, this.expressApplication, (err: any, middleware: any) => {
               if (err) {
                 $log.error("Error when binding with the swagger middleware: $err");
                 reject("Error when binding with the swagger middleware");
