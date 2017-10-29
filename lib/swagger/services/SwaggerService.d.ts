@@ -16,7 +16,7 @@ export declare class SwaggerService {
      */
     $afterRoutesInit(): void | Promise<void>;
     swaggerValidationErrorHandler(error: any, req: Express.Request, res: Express.Response, next: Express.NextFunction): any;
-    $beforeRoutesInit(): void | Promise<void>;
+    $afterControllersInit(): void | Promise<void>;
     private onRequest;
     /**
      *

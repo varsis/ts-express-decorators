@@ -467,6 +467,8 @@ export abstract class ServerLoader implements IServerLifecycle {
         this.use(LogIncomingRequestMiddleware);
         await this.callHook("$onMountingMiddlewares", undefined, this.expressApp);
         await this.injectorService.emit("$beforeRoutesInit");
+        await this.injectorService.emit("$onControllersInit", this._components);
+        await this.injectorService.emit("$afterControllersInit");
         await this.injectorService.emit("$onRoutesInit", this._components);
 
         delete this._components; // free memory

@@ -40,6 +40,15 @@ export declare class ControllerService extends ProxyControllerRegistry {
      *
      * @param components
      */
+    $onControllersInit(components: {
+        file: string;
+        endpoint: string;
+        classes: any[];
+    }[]): void;
+    /**
+     *
+     * @param components
+     */
     $onRoutesInit(components: {
         file: string;
         endpoint: string;
@@ -62,4 +71,5 @@ export declare class ControllerService extends ProxyControllerRegistry {
      * Build all controllers and mount routes to the ExpressApplication.
      */
     buildControllers(): this;
+    private mountPaths();
 }
