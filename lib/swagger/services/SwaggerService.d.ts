@@ -11,10 +11,6 @@ export declare class SwaggerService {
     constructor(controllerService: ControllerService, serverSettingsService: ServerSettingsService, expressApplication: ExpressApplication);
     private uiMiddleware();
     private validateMiddleware();
-    /**
-     *
-     */
-    $afterRoutesInit(): void | Promise<void>;
     swaggerValidationErrorHandler(error: any, req: Express.Request, res: Express.Response, next: Express.NextFunction): any;
     $afterControllersInit(): void | Promise<void>;
     private onRequest;

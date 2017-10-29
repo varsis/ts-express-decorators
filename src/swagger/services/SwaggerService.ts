@@ -38,17 +38,6 @@ export class SwaggerService {
       return require("swagger-express-middleware");
     }
 
-    /**
-     *
-     */
-    $afterRoutesInit(): void|Promise<void> {
-      const conf = this.serverSettingsService.get<ISwaggerSettings>("swagger");
-      const host = this.serverSettingsService.getHttpPort();
-      const path = conf && conf.path || "/docs";
-
-
-    }
-
     swaggerValidationErrorHandler(error: any, req: Express.Request, res: Express.Response, next: Express.NextFunction): any {
       if (error) {
         const errorOrEmptyObj = error || {};
