@@ -70,6 +70,8 @@ export class SwaggerService {
 
         const spec = this.getOpenAPISpec();
 
+        $log.info(spec);
+
         $log.info(`Swagger UI is available on http://${host.address}:${host.port}${path}`);
 
         this.expressApplication.use(path, this.uiMiddleware().serve);
