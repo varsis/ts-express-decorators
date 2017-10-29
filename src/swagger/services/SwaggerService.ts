@@ -38,23 +38,6 @@ export class SwaggerService {
       return require("swagger-express-middleware");
     }
 
-    /**
-     *
-     */
-    $afterRoutesInit(): void|Promise<void> {
-      const conf = this.serverSettingsService.get<ISwaggerSettings>("swagger");
-      const host = this.serverSettingsService.getHttpPort();
-      const path = conf && conf.path || "/docs";
-
-      $log.info(`Swagger Json is available on http://${host.address}:${host.port}${path}/swagger.json`);
-      this.expressApplication.get(`${path}/swagger.json`, this.onRequest);
-
-      if (conf && conf.specPath) {
-        const spec = this.getOpenAPISpec();
-        Fs.writeFileSync(conf.specPath, JSON.stringify(spec, null, 2));
-      }
-    }
-
     swaggerValidationErrorHandler(error: any, req: Express.Request, res: Express.Response, next: Express.NextFunction): any {
       if (error) {
         const errorOrEmptyObj = error || {};
@@ -72,6 +55,14 @@ export class SwaggerService {
 
       if (conf) {
         let cssContent;
+
+        $log.info(`Swagger Json is available on http://${host.address}:${host.port}${path}/swagger.json`);
+        this.expressApplication.get(`${path}/swagger.json`, this.onRequest);
+
+        if (conf.specPath) {
+          const spec = this.getOpenAPISpec();
+          Fs.writeFileSync(conf.specPath, JSON.stringify(spec, null, 2));
+        }
 
         if (conf.cssPath) {
           cssContent = Fs.readFileSync(PathUtils.resolve(this.serverSettingsService.resolve(conf.cssPath)), {encoding: "utf8"});
