@@ -57,7 +57,6 @@ export class OpenApiPropertiesBuilder {
     protected createSchema(model: Storable): Schema {
         let builder;
         let schema: Schema = model.store.get<Schema>("schema") || {};
-        console.log(schema)
 
         if (model.store.get("description")) {
             schema.description = schema.description || model.store.get("description");
