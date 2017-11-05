@@ -1,5 +1,3 @@
-/// <reference types="express" />
-import * as Express from "express";
 import { Spec } from "swagger-schema-official";
 import { ExpressApplication } from "../../core/services/ExpressApplication";
 import { ControllerService } from "../../mvc/services/ControllerService";
@@ -11,7 +9,6 @@ export declare class SwaggerService {
     constructor(controllerService: ControllerService, serverSettingsService: ServerSettingsService, expressApplication: ExpressApplication);
     private uiMiddleware();
     private validateMiddleware();
-    swaggerValidationErrorHandler(error: any, req: Express.Request, res: Express.Response, next: Express.NextFunction): any;
     $afterControllersInit(): void | Promise<void>;
     private onRequest;
     /**
