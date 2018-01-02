@@ -10,10 +10,9 @@ The default configuration is as follow:
   "port": 8080,
   "debug": false,
   "httpsPort": 8000,
-  "endpointUrl": "/rest",
   "uploadDir": "${rootDir}/uploads",
   "mount": {
-    "/rest": "${rootDir}/controllers/**/*.js"
+    "/rest": "${rootDir}/controllers/**/*.ts" // support ts with ts-node then fallback to js
   },
   "componentsScan": [
     "${rootDir}/middlewares/**/*.js",
@@ -29,6 +28,7 @@ The default configuration is as follow:
 ```
 
 You can customize your configuration as follow:
+
 ```typescript
 // server.ts
 import {ServerLoader, ServerSettings} from "ts-express-decorators";
@@ -40,7 +40,8 @@ import Path = require("path");
      "/rest": "${rootDir}/controllers/current/**/*.js",
      "/rest/v1": [
         "${rootDir}/controllers/v1/users/*.js", 
-        "${rootDir}/controllers/v1/groups/*.js"
+        "${rootDir}/controllers/v1/groups/*.ts", // support ts entry
+        MyController // support manual import
      ]
    }
 })
@@ -52,7 +53,10 @@ export class Server extends ServerLoader {
 import * as Server from "./server";
 new Server.start();
 ```
-### Options
+> Ts.ED support [ts-node](https://github.com/TypeStrong/ts-node). Ts extension will be replaced by a Js extension if 
+ts-node isn't the runtime.
+
+## Options
 
 * `rootDir` &lt;string&gt;: The root directory where you build run project. By default, it's equal to `process.cwd().
 * `env` &lt;Env&gt;: The environment profile. By default the environment profile is equals to `NODE_ENV`.
@@ -64,41 +68,37 @@ new Server.start();
   * `cert` &lt;string&gt; | &lt;string[]&gt; | [&lt;Buffer&gt;](https://nodejs.org/api/buffer.html#buffer_class_buffer) | [&lt;Buffer[]&gt;](https://nodejs.org/api/buffer.html#buffer_class_buffer): A string, Buffer, array of strings, or array of Buffers containing the certificate key of the server in PEM format. (Required)
   * `ca` &lt;string&gt; | &lt;string[]&gt; | [&lt;Buffer&gt;](https://nodejs.org/api/buffer.html#buffer_class_buffer) | [&lt;Buffer[]&gt;](https://nodejs.org/api/buffer.html#buffer_class_buffer): A string, Buffer, array of strings, or array of Buffers of trusted certificates in PEM format. If this is omitted several well known "root" CAs (like VeriSign) will be used. These are used to authorize connections.
 * `uploadDir` &lt;string&gt: The temporary directory to upload the documents. See more on [Upload file with Multer](tutorials/upload-files-with-multer.md).
-* `mount` &lt;[IServerMountDirectories](api/common/server/iservermountdirectories.md)&gt;: Mount all controllers under a directories to an endpoint.
+* `mount` &lt;[IServerMountDirectories](api/common/config/iservermountdirectories.md)&gt;: Mount all controllers under a directories to an endpoint.
 * `componentsScan` &lt;string[]&gt;: List of directories to scan [Services](docs/services/overview.md), [Middlewares](docs/middlewares/overview.md) or [Converters](docs/converters.md).
-* `serveStatic` &lt;[IServerMountDirectories](api/common/server/iservermountdirectories.md)&gt;: Object to mount all directories under to his endpoints. See more on [Serve Static](tutorials/serve-static-files.md).
+* `serveStatic` &lt;[IServerMountDirectories](api/common/config/iservermountdirectories.md)&gt;: Object to mount all directories under to his endpoints. See more on [Serve Static](tutorials/serve-static-files.md).
 * `swagger` &lt;Object&gt;: Object configure swagger. See more on [Swagger](tutorials/swagger.md).
 * `debug` &lt;boolean&gt;: Enable debug mode. By default debug is false.
 * `routers` &lt;object&gt;: Global configuration for the Express.Router. See express [documentation](http://expressjs.com/en/api.html#express.router).
+* `validationModelStrict` &lt;boolean&gt;: Use a strict validation when a model is used by the converter. When a property is unknow, it throw a BadRequest. By default true.
+* `logger`  &lt;[ILoggerSettings](api/common/config/iloggersettings.md)&gt;: Logger configuration.
 
-### Logger
-#### Default logger
+## Logger
+### Default logger
 
 Default logger use by Ts.ED is [ts-log-debug](https://romakita.github.io/ts-log-debug/). 
 
- - [Configuration](https://romakita.github.io/ts-log-debug/#/getting-started?id=installation),
- - [Customize appender (chanel)](https://romakita.github.io/ts-log-debug/#/appenders/custom),
- - [Customize layout](https://romakita.github.io/ts-log-debug/#/layouts/custom)
+ - [Configuration](https://romakita.github.io/ts-log-debug#/getting-started?id=installation),
+ - [Customize appender (chanel)](https://romakita.github.io/ts-log-debug#/appenders/custom),
+ - [Customize layout](https://romakita.github.io/ts-log-debug#/layouts/custom)
 
+### Configuration
 
-#### Shutdown logger
+Some options is provided:
 
-Shutdown return a Promise that will be resolved when ts-log-debug has closed all appenders and finished writing log events. 
-Use this when your program exits to make sure all your logs are written to files, sockets are closed, etc.
+- `logger.debug` (or `debug`): Enable debug mode. By default debug is false.
+- `logger.logRequest`: Log all incoming request. By default is true and print the configured `logger.requestFields`.
+- `logger.requestFields`: Fields displayed when a request is logged. Possible values: `reqId`, `method`, `url`, `headers`, `body`, `query`,`params`, `duration`.
+- `logger.reqIdBuilder`: A function called for each incoming request to create a request id.
 
-```typescript
-import {$log} from "ts-log-debug";
+> It's recommended to disable logRequest in production. Logger have a cost on the performance.
 
-$log
-  .shutdown()
-  .then(() => {
-     console.log("Complete")
-  }); 
-```
+### Request logger
 
-#### Request and response
-
-By default, the request and response will be logged by Ts.ED. 
 For each Express.Request, a logger will be attached and can be used like here:
 
 ```typescript
@@ -108,7 +108,9 @@ request.log.warn({customData: "test"})
 request.log.error({customData: "test"})
 request.log.trace({customData: "test"})
 ```
-A call with once of this method will generate this log:
+
+A call with once of this method will generate a log according to the `logger.requestFields` configuration:
+
 ```bash
 [2017-09-01 11:12:46.994] [INFO ] [TSED] - {
   "status": 200,
@@ -131,8 +133,20 @@ A call with once of this method will generate this log:
 }
 ```
 
-The log methods is added by the [LogIncomingRequestMiddleware](api/common/mvc/logincomingrequestmiddleware.md).
-It can be overloaded with `@OverrideMiddleware`.
+You can configure this output from configuration:
+
+```typescript
+@ServerSettings({
+   logger: {
+       requestFields: ["reqId", "method", "url", "headers", "body", "query","params", "duration"]
+   }
+})
+export class Server extends ServerLoader {
+
+}
+```
+
+or you can override the middleware with `@OverrideMiddleware`.
 
 Example: 
 
@@ -163,4 +177,83 @@ export class CustomLogIncomingRequestMiddleware extends LogIncomingRequestMiddle
 }
 ```
 
+### Shutdown logger
 
+Shutdown return a Promise that will be resolved when ts-log-debug has closed all appenders and finished writing log events. 
+Use this when your program exits to make sure all your logs are written to files, sockets are closed, etc.
+
+```typescript
+import {$log} from "ts-log-debug";
+
+$log
+  .shutdown()
+  .then(() => {
+     console.log("Complete")
+  }); 
+```
+
+## Disable strict model validation
+
+Since v2.6, [ConverterService](docs/converters.md) check the consistency between the model and the Json object given to the endpoint.
+
+!> When a property is unknown on the model, Ts.Ed throw a BadRequest.
+
+You disable this behavior like here:
+
+```typescript
+@ServerSettings({
+   validationModelStrict: false
+})
+export class Server extends ServerLoader {
+
+}
+```
+
+## Get configuration
+
+The configuration can be reused throughout your application in different ways. 
+
+- With dependency injection in [Service](docs/services/overview.md), [Controller](docs/controllers.md), [Middleware](docs/middlewares/overview.md), [Filter](docs/filters.md) or [Converter](docs/converters.md).
+- With the decorators [@Constant](api/common/config/constant.md) and [@Value](api/common/config/value.md).
+
+### From service (DI)
+
+```typescript
+import {ServerSettingsService} from "ts-express-decorators";
+@Service() // or Controller or Middleware
+export class MyService {
+    constructor(ServerSettingsService: ServerSettingsService) {
+        
+    }
+}
+```
+
+### From decorators
+
+Decorators [@Constant](api/common/config/constant.md) and [@Value](api/common/config/value.md) can be used in all classes
+including: [Service](docs/overview/services.md), [Controller](docs/controllers.md), [Middleware](docs/middlewares/overview.md), [Filter](docs/filters.md) and [Converter](docs/converters.md).
+
+[@Constant](api/common/config/constant.md) and [@Value](api/common/config/value.md) accept an expression as parameters to 
+inspect the configuration object and return the value.
+
+```typescript
+import {Env} from "ts-express-decorators";
+
+export class MyClass {
+    
+    @Constant("env")
+    env: Env;
+    
+    @Value("swagger.path")
+    swaggerPath: string;
+    
+}
+```
+
+> Constant return an Object.freeze() value. 
+
+
+<div class="guide-links">
+<a href="#/docs/controllers">Controllers</a>
+<a href="#/docs/services/overview">Services</a>
+</div>

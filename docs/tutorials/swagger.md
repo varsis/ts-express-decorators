@@ -17,7 +17,7 @@ Then add the following configuration in your [ServerLoader](api/common/server/se
 
 ```typescript
 import {ServerLoader, ServerSettings} from "ts-express-decorators";
-import "ts-express-decorators/swagger"; // import swagger ts.ed module
+import "ts-express-decorators/swagger"; // import swagger Ts.ED module
 
 @ServerSettings({
     rootDir: __dirname,
@@ -130,3 +130,7 @@ export class Calendar {
 
 > Credits: Thanks to [vologab](https://github.com/vologab) to his contribution.
 
+<div class="guide-links">
+<a href="#/tutorials/socket-io">Socket.io</a>
+<a href="#/tutorials/ajv">Validation with AJV</a>
+</div>

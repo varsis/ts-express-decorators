@@ -4,12 +4,14 @@
 /** */
 import * as Express from "express";
 import {$log} from "ts-log-debug";
-import {EnvTypes} from "../../core/interfaces";
+import {globalServerSettings} from "../../config";
+import {ILoggerSettings} from "../../config/interfaces/IServerSettings";
+import {ServerSettingsService} from "../../config/services/ServerSettingsService";
+import {Env} from "../../core/interfaces";
 import {applyBefore} from "../../core/utils";
-import {ServerSettingsService} from "../../server/services/ServerSettingsService";
+import {Req} from "../../filters/decorators/request";
+import {Res} from "../../filters/decorators/response";
 import {Middleware} from "../decorators/class/middleware";
-import {Req} from "../decorators/param/request";
-import {Res} from "../decorators/param/response";
 import {IMiddleware} from "../interfaces";
 
 /**
@@ -18,12 +20,24 @@ import {IMiddleware} from "../interfaces";
  */
 @Middleware()
 export class LogIncomingRequestMiddleware implements IMiddleware {
+    private static DEFAULT_FIELDS = [
+        "reqId",
+        "method",
+        "url",
+        "duration"
+    ];
 
     private AUTO_INCREMENT_ID = 1;
-    private env: EnvTypes;
+    private env: Env;
+    private loggerSettings: ILoggerSettings;
+    private fields: string[];
+    private reqIdBuilder: () => number;
 
     constructor(private serverSettingsService: ServerSettingsService) {
         this.env = serverSettingsService.env;
+        this.loggerSettings = serverSettingsService.logger as ILoggerSettings;
+        this.reqIdBuilder = this.loggerSettings.reqIdBuilder || (() => this.AUTO_INCREMENT_ID++);
+        this.fields = this.loggerSettings.requestFields || LogIncomingRequestMiddleware.DEFAULT_FIELDS;
     }
 
     /**
@@ -45,7 +59,7 @@ export class LogIncomingRequestMiddleware implements IMiddleware {
      * @param {e.Request} request
      */
     protected onLogStart(request: Express.Request) {
-        request.log.info();
+        request.log.debug({event: "start"});
     }
 
     /**
@@ -53,21 +67,22 @@ export class LogIncomingRequestMiddleware implements IMiddleware {
      * @param request
      */
     protected configureRequest(request: Express.Request) {
-        request.id = String(request.id ? request.id : this.AUTO_INCREMENT_ID++);
-        request.tagId = `[#${(request as any).id}]`;
+        request.id = String(request.id ? request.id : this.reqIdBuilder());
         request.tsedReqStart = new Date();
 
+        const verbose = (req: Express.Request) => this.requestToObject(req);
+        const info = (req: Express.Request) => this.minimalRequestPicker(req);
         request.log = {
-            info: (obj: any) => $log.info(this.stringify(request)(obj)),
-            debug: (obj: any) => $log.debug(this.stringify(request)(obj)),
-            warn: (obj: any) => $log.warn(this.stringify(request)(obj)),
-            error: (obj: any) => $log.error(this.stringify(request)(obj)),
-            trace: (obj: any) => $log.trace(this.stringify(request)(obj))
+            info: (obj: any) => $log.info(this.stringify(request, info)(obj)),
+            debug: (obj: any) => $log.debug(this.stringify(request, verbose)(obj)),
+            warn: (obj: any) => $log.warn(this.stringify(request, verbose)(obj)),
+            error: (obj: any) => $log.error(this.stringify(request, verbose)(obj)),
+            trace: (obj: any) => $log.trace(this.stringify(request, verbose)(obj))
         };
     }
 
     /**
-     * Return a partial request.
+     * Return complete request info.
      * @param request
      * @returns {Object}
      */
@@ -85,6 +100,21 @@ export class LogIncomingRequestMiddleware implements IMiddleware {
     }
 
     /**
+     * Return a filtered request from global configuration.
+     * @param request
+     * @returns {Object}
+     */
+    protected minimalRequestPicker(request: Express.Request): any {
+        const info = this.requestToObject(request);
+
+        return this.fields
+            .reduce((acc: any, key: string) => {
+                acc[key] = info[key];
+                return acc;
+            }, {});
+    }
+
+    /**
      * Return the duration between the time when LogIncomingRequest has handle the request and now.
      * @param request
      * @returns {number}
@@ -96,16 +126,26 @@ export class LogIncomingRequestMiddleware implements IMiddleware {
     /**
      * Stringify a request to JSON.
      * @param request
+     * @param propertySelector
      * @returns {(scope: any) => string}
      */
-    protected stringify(request: Express.Request): (scope: any) => string {
+    protected stringify(request: Express.Request, propertySelector: (e: Express.Request) => any): (scope: any) => string {
         return (scope: any = {}) => {
-            scope = Object.assign(scope, this.requestToObject(request));
-
-            if (this.env !== EnvTypes.PROD) {
-                return JSON.stringify(scope, null, 2);
+            if (typeof scope === "string") {
+                scope = {message: scope};
             }
-            return JSON.stringify(scope);
+
+            scope = Object.assign(scope, propertySelector(request));
+
+            try {
+                if (this.env !== Env.PROD) {
+                    return JSON.stringify(scope, null, 2);
+                }
+                return JSON.stringify(scope);
+            } catch (er) {
+                $log.error({error: er});
+            }
+            return "";
         };
     }
 
@@ -115,14 +155,22 @@ export class LogIncomingRequestMiddleware implements IMiddleware {
      * @param response
      */
     protected onLogEnd(request: Express.Request, response: Express.Response) {
-        /* istanbul ignore else */
-        if (request.id) {
-            const status = (response as any)._header
-                ? response.statusCode
-                : undefined;
-            request.log.info({status, data: request.getStoredData && request.getStoredData()});
-            this.cleanRequest(request);
-        }
+        setImmediate(() => {
+            /* istanbul ignore else */
+            if (request.id) {
+                if (this.loggerSettings.logRequest) {
+                    request.log.info({status: response.statusCode});
+                }
+
+                if (globalServerSettings.debug) {
+                    request.log.debug({
+                        status: response.statusCode,
+                        data: request.getStoredData && request.getStoredData()
+                    });
+                }
+                this.cleanRequest(request);
+            }
+        });
     }
 
     /**

@@ -1,8 +1,11 @@
-import * as Express from "express";
 import {$log} from "ts-log-debug";
+import "../../../src/ajv";
 import {ServerLoader, ServerSettings} from "../../../src/index";
+import "../../../src/socketio";
 import "../../../src/swagger";
+import {RestCtrl} from "./controllers/RestCtrl";
 import TestAcceptMimeMiddleware from "./middlewares/acceptmime";
+// import "./middlewares/authentication";
 import Path = require("path");
 
 const rootDir = Path.resolve(__dirname);
@@ -12,8 +15,12 @@ const rootDir = Path.resolve(__dirname);
     port: 8001,
     httpsPort: 8071,
     mount: {
-        "/rest": "${rootDir}/controllers/**/**.js",
-        "/rest/v1": "${rootDir}/controllers/**/**.js"
+        "/rest": [
+            "${rootDir}/controllers/Base/**.js",
+            "${rootDir}/controllers/calendars/**.ts",
+            RestCtrl
+        ],
+        "/rest/v1": "${rootDir}/controllers/**/**.ts"
     },
 
     componentsScan: [
@@ -40,8 +47,7 @@ export class ExampleServer extends ServerLoader {
      * @returns {Server}
      */
     public $onMountingMiddlewares(): void {
-        let morgan = require("morgan"),
-            cookieParser = require("cookie-parser"),
+        let cookieParser = require("cookie-parser"),
             bodyParser = require("body-parser"),
             compress = require("compression"),
             methodOverride = require("method-override"),
@@ -60,18 +66,6 @@ export class ExampleServer extends ServerLoader {
         this.engine(".html", require("ejs").__express)
             .set("views", "./views")
             .set("view engine", "html");
-    }
-
-    /**
-     * Set here your check authentification strategy.
-     * @param request
-     * @param response
-     * @param next
-     * @returns {boolean}
-     */
-    public $onAuth(request: Express.Request, response: Express.Response, next: Express.NextFunction): void {
-
-        next(request.get("authorization") === "token");
     }
 
     /**

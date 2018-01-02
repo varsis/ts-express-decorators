@@ -38,19 +38,63 @@ export function getClassOrSymbol(target: any): any {
  * @returns {boolean}
  */
 export function isPrimitiveOrPrimitiveClass(target: any): boolean {
+    return isString(target)
+        || isNumber(target)
+        || isBoolean(target);
+}
 
-    const isPrimitive = ["string", "boolean", "number"].indexOf(typeof target);
-
-    if (isPrimitive > -1) {
-        return true;
+/**
+ *
+ * @param target
+ * @returns {"string" | "number" | "boolean" | "any"}
+ */
+export function primitiveOf(target: any): "string" | "number" | "boolean" | "any" {
+    if (isString(target)) {
+        return "string";
     }
+    if (isNumber(target)) {
+        return "number";
+    }
+    if (isBoolean(target)) {
+        return "boolean";
+    }
+    return "any";
+}
 
-    return target instanceof String
-        || target === String
-        || target instanceof Number
-        || target === Number
-        || target instanceof Boolean
-        || target === Boolean;
+/**
+ *
+ * @param target
+ * @returns {boolean}
+ */
+export function isString(target: any): boolean {
+    return typeof target === "string" || target instanceof String || target === String;
+}
+
+/**
+ *
+ * @param target
+ * @returns {boolean}
+ */
+export function isNumber(target: any): boolean {
+    return typeof target === "number" || target instanceof Number || target === Number;
+}
+
+/**
+ *
+ * @param target
+ * @returns {boolean}
+ */
+export function isBoolean(target: any): boolean {
+    return typeof target === "boolean" || target instanceof Boolean || target === Boolean;
+}
+
+/**
+ *
+ * @param target
+ * @returns {Boolean}
+ */
+export function isArray(target: any): boolean {
+    return Array.isArray(target);
 }
 
 /**
@@ -62,7 +106,7 @@ export function isArrayOrArrayClass(target: any): boolean {
     if (target === Array) {
         return true;
     }
-    return Object.prototype.toString.call(target) === "[object Array]";
+    return isArray(target);
 }
 
 /**
@@ -83,6 +127,37 @@ export function isCollection(target: any): boolean {
 }
 
 /**
+ *
+ * @param target
+ * @returns {boolean}
+ */
+export function isDate(target: any): boolean {
+    return target === Date || target instanceof Date;
+}
+
+/**
+ *
+ * @param target
+ * @returns {boolean}
+ */
+export function isObject(target: any): boolean {
+    return target === Object;
+}
+
+/**
+ *
+ * @param target
+ * @returns {boolean}
+ */
+export function isClass(target: any) {
+    return !isPrimitiveOrPrimitiveClass(target)
+        && !isObject(target)
+        && !isDate(target)
+        && target !== undefined
+        && !isPromise(target);
+}
+
+/**
  * Return true if the value is an empty string, null or undefined.
  * @param value
  * @returns {boolean}
@@ -95,7 +170,6 @@ export function isEmpty(value: any): boolean {
  * Get object name
  */
 export const nameOf = (obj: any): string => {
-
     switch (typeof obj) {
         default:
             return "" + obj;
@@ -104,7 +178,6 @@ export const nameOf = (obj: any): string => {
         case "function":
             return nameOfClass(obj);
     }
-
 };
 
 /**
@@ -123,14 +196,20 @@ export const nameOfClass = (targetClass: any) => {
 export const nameOfSymbol = (sym: symbol): string =>
     sym.toString().replace("Symbol(", "").replace(")", "");
 
-
+/**
+ *
+ * @param out
+ * @param obj
+ * @param {{[p: string]: (collection: any[], value: any) => any}} reducers
+ * @returns {any}
+ */
 export function deepExtends(out: any, obj: any, reducers: { [key: string]: (collection: any[], value: any) => any } = {}): any {
 
     if (obj === undefined || obj === null) {
         return obj;
     }
 
-    if (isPrimitiveOrPrimitiveClass(obj) || typeof obj === "function") {
+    if (isPrimitiveOrPrimitiveClass(obj) || typeof obj === "symbol" || typeof obj === "function") {
         return obj;
     }
 
@@ -195,14 +274,29 @@ export function deepExtends(out: any, obj: any, reducers: { [key: string]: (coll
     return out;
 }
 
+/**
+ *
+ * @param target
+ * @returns {boolean}
+ */
 export function isPromise(target: any): boolean {
     return target === Promise || target instanceof Promise;
 }
 
+/**
+ *
+ * @param target
+ * @returns {any}
+ */
 export function getInheritedClass(target: any): any {
     return Object.getPrototypeOf(target);
 }
 
+/**
+ *
+ * @param {any[]} args
+ * @returns {"parameter" | "property" | "method" | "class"}
+ */
 export function getDecoratorType(args: any[]): "parameter" | "property" | "method" | "class" {
     const [, propertyKey, descriptor] = args;
 
@@ -216,22 +310,105 @@ export function getDecoratorType(args: any[]): "parameter" | "property" | "metho
     return (descriptor && descriptor.value) ? "method" : "class";
 }
 
+/**
+ *
+ * @param target
+ * @param {string} propertyKey
+ * @returns {PropertyDescriptor}
+ */
 export function descriptorOf(target: any, propertyKey: string): PropertyDescriptor {
-    return Object.getOwnPropertyDescriptor(target && target.prototype || target, propertyKey);
+    return Object.getOwnPropertyDescriptor(target && target.prototype || target, propertyKey)!;
 }
 
+/**
+ *
+ * @param target
+ * @param {string} propertyKey
+ * @returns {DecoratorParameters}
+ */
 export function decoratorArgs(target: any, propertyKey: string): DecoratorParameters {
     return [
         target,
         propertyKey,
-        descriptorOf(target, propertyKey)
+        descriptorOf(target, propertyKey)!
     ];
 }
 
+/**
+ *
+ * @param target
+ * @returns {Array}
+ */
+export function ancestorsOf(target: any) {
+    const classes = [];
+
+    let currentTarget = getClass(target);
+
+    while (nameOf(currentTarget) !== "") {
+        classes.unshift(currentTarget);
+        currentTarget = getInheritedClass(currentTarget);
+    }
+
+    return classes;
+}
+
+/**
+ *
+ * @param target
+ * @param {string} name
+ * @param {Function} callback
+ */
 export function applyBefore(target: any, name: string, callback: Function) {
     const original = target[name];
     target[name] = function (...args: any[]) {
         callback(...args);
         return original.apply(this, args);
     };
+}
+
+/**
+ *
+ * @param {string} expression
+ * @param scope
+ * @param defaultValue
+ * @param separator
+ * @returns {any}
+ */
+export function getValue(expression: string, scope: any, defaultValue?: any, separator = ".") {
+    const keys: string[] = expression.split(separator);
+
+    const getValue = (key: string) => {
+        if (isCollection(scope)) {
+            return scope.get(key);
+        }
+        return scope[key];
+    };
+
+    while ((scope = getValue(keys.shift()!)) && keys.length) {
+    }
+
+    return scope === undefined ? defaultValue : scope;
+}
+
+/**
+ *
+ * @param {Promise<any>} promise
+ * @param {number} time
+ * @returns {Promise<any>}
+ */
+export function promiseTimeout(promise: Promise<any>, time: number = 1000): Promise<{ ok: boolean, response: any }> {
+    const timeout = (promise: Promise<any>, time: number) => new Promise((resolve) => {
+        promise.then((response) => {
+            resolve();
+            return response;
+        });
+        setTimeout(() => resolve({ok: false}), time);
+    });
+
+    promise = promise.then((response) => ({ok: true, response}));
+
+    return Promise.race([
+        promise,
+        timeout(promise, time)
+    ]);
 }

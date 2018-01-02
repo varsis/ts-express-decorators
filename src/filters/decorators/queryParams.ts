@@ -1,10 +1,10 @@
+import {QueryParamsFilter} from "../components/QueryParamsFilter";
 /**
  * @module common/filters
  */
 /** */
-import {Type} from "../../core/interfaces/Type";
-import {ParamRegistry} from "../../mvc/registries/ParamRegistry";
-import {QueryParamsFilter} from "../components/QueryParamsFilter";
+import {ParamRegistry} from "../registries/ParamRegistry";
+
 /**
  * QueryParams return the value from [request.query](http://expressjs.com/en/4x/api.html#req.query) object.
  *
@@ -42,20 +42,10 @@ import {QueryParamsFilter} from "../components/QueryParamsFilter";
  * @returns {Function}
  */
 export function QueryParams(expression?: string | any, useType?: any): Function {
-
-    return <T>(target: Type<T>, propertyKey: string | symbol, parameterIndex: number): void => {
-
-        if (typeof parameterIndex === "number") {
-
-            ParamRegistry.useFilter(QueryParamsFilter, {
-                target,
-                propertyKey,
-                parameterIndex,
-                expression,
-                useType
-            });
-
-        }
-
-    };
+    return ParamRegistry.decorate(QueryParamsFilter, {
+        expression,
+        useType,
+        useConverter: true,
+        useValidation: true
+    });
 }

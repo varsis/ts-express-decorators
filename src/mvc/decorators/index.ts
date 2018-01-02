@@ -15,17 +15,11 @@ export * from "./method/authenticated";
 export * from "./method/contentType";
 
 // Shared
-export * from "./header";
+export * from "./method/header";
 export * from "./required";
 export * from "./allow";
 
 // Parameters
-export * from "./param/responseData";
-export * from "./param/response";
-export * from "./param/request";
-export * from "./param/next";
-export * from "./param/error";
-export * from "./param/endpointInfo";
 
 export * from "./class/controller";
 export * from "./class/middleware";
@@ -36,3 +30,4 @@ export * from "./class/routerSettings";
 export * from "./class/mergeParams";
 export * from "./class/strict";
 export * from "./class/caseSensitive";
+export * from "./class/expressApplication";

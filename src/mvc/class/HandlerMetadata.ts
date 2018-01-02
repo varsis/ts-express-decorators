@@ -1,14 +1,10 @@
-/**
- * @module common/mvc
- */
-/** */
-
 import {NotEnumerable} from "../../core/decorators";
+import {ParamMetadata} from "../../filters/class/ParamMetadata";
+import {EXPRESS_ERR, EXPRESS_NEXT_FN, EXPRESS_REQUEST, EXPRESS_RESPONSE} from "../../filters/constants";
+import {ParamRegistry} from "../../filters/registries/ParamRegistry";
 import {MiddlewareType} from "../interfaces";
 import {ControllerRegistry} from "../registries/ControllerRegistry";
 import {MiddlewareRegistry} from "../registries/MiddlewareRegistry";
-import {ParamRegistry} from "../registries/ParamRegistry";
-import {ParamMetadata} from "./ParamMetadata";
 
 
 export class HandlerMetadata {
@@ -35,6 +31,9 @@ export class HandlerMetadata {
     @NotEnumerable()
     private _nextFunction: boolean;
 
+    @NotEnumerable()
+    private _useClass: any;
+
     constructor(private _target: any, private _methodClassName?: string) {
         this.resolve();
     }
@@ -44,6 +43,8 @@ export class HandlerMetadata {
      */
     private resolve() {
 
+        this._useClass = this._target;
+
         let handler = this._target;
         let target = this._target;
 
@@ -52,7 +53,7 @@ export class HandlerMetadata {
             this._type = "middleware";
             this._errorParam = middleware.type === MiddlewareType.ERROR;
             this._methodClassName = "use";
-            target = middleware.useClass;
+            this._useClass = target = middleware.useClass;
 
         } else if (ControllerRegistry.has(this._target)) {
             this._type = "controller";
@@ -97,6 +98,21 @@ export class HandlerMetadata {
     }
 
     get services(): ParamMetadata[] {
-        return ParamRegistry.getParams(this.target, this.methodClassName);
+
+        if (this.injectable) {
+            return ParamRegistry.getParams(this._useClass, this.methodClassName);
+        }
+
+        let parameters: any[] = [{service: EXPRESS_REQUEST}, {service: EXPRESS_RESPONSE}];
+
+        if (this.errorParam) {
+            parameters.unshift({service: EXPRESS_ERR});
+        }
+
+        if (this.nextFunction) {
+            parameters.push({service: EXPRESS_NEXT_FN});
+        }
+
+        return parameters;
     }
 }

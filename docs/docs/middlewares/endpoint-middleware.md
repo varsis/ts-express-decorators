@@ -1,7 +1,7 @@
 # Endpoint middleware
 ### Simple use case
 
-Middleware for an endpoint let you to manage request and response directly on a method controller. In most case you will
+Middleware for an endpoint lets you manage request and response directly on a method controller. In most case you will
 create a middleware to do something on request or response like that:
 
 ```typescript
@@ -208,4 +208,12 @@ class MyCtrl {
    }
 }  
 ```
+
+
+<div class="guide-links">
+<a href="#/docs/middlewares/global-error-middleware">Global error middleware</a>
+<a href="#/docs/middlewares/endpoint-error-middleware">Endpoint error middleware</a>
+</div>
+
+
 

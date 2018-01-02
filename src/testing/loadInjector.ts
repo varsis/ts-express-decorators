@@ -3,11 +3,13 @@
  */
 /** */
 
-import {EnvTypes} from "../core/interfaces";
-import {ExpressApplication} from "../core/services/ExpressApplication";
+import {globalServerSettings} from "../config";
+import {Env} from "../core/interfaces";
 import {InjectorService} from "../di/services/InjectorService";
-import {ServerSettingsProvider} from "../server/class/ServerSettingsProvider";
-import {ServerSettingsService} from "../server/services/ServerSettingsService";
+import {ExpressApplication} from "../mvc/decorators";
+import {HttpServer} from "../server/decorators/httpServer";
+import {HttpsServer} from "../server/decorators/httpsServer";
+
 export function loadInjector() {
     if (!InjectorService.has(ExpressApplication)) {
         /* istanbul ignore next */
@@ -16,15 +18,9 @@ export function loadInjector() {
             get: () => (app)
         };
         InjectorService.set(ExpressApplication, app);
-
-        /* istanbul ignore else */
-        if (!InjectorService.has(ServerSettingsService)) {
-
-            const settingsProvider = new ServerSettingsProvider();
-            settingsProvider.env = EnvTypes.TEST;
-
-            InjectorService.set(ServerSettingsService, settingsProvider.$get());
-        }
+        InjectorService.set(HttpsServer, {});
+        InjectorService.set(HttpServer, {});
+        globalServerSettings.env = Env.TEST;
     }
 
     InjectorService.load();

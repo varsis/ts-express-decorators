@@ -129,9 +129,9 @@ Same decorator is available to get other params. Use `BodyParams`
 (with the right HTTP verb `@Post`, `@Put`, etc...), `QueryParams` or `CookiesParams` 
 to get parameters send by the client. 
 
-## Header
+## HeaderParams
 
-`@Header` decorator provide you a quick access to the `Express.request.get()`
+`@HeaderParams` decorator provide you a quick access to the `Express.request.get()`
 
 ```typescript
 import {Controller, Get, Header, PathParams} from "ts-express-decorators";
@@ -141,7 +141,7 @@ export class CalendarCtrl {
 
     @Get("/:id")
     async get(
-        @Header("x-token") token: string,
+        @HeaderParams("x-token") token: string,
         @PathParams("id") id: number
     ): any {
         console.log("token", token);
@@ -213,7 +213,7 @@ export class CalendarCtrl {
 
 ## Custom middleware
 
-`@Use()`, `@UseBefore()`, `@UseAfter()` decorators let you to add custom middleware on a method or on controller. 
+`@Use()`, `@UseBefore()`, `@UseAfter()` decorators lets you add custom middleware on a method or on controller. 
 
 ### Example
 ```typescript
@@ -250,7 +250,7 @@ export class CalendarCtrl {
     }
 }
 ```
-> For more information about the `CustomMiddleware` see the [Middlewares](docs/middlewares.md) section.
+> For more information about the `CustomMiddleware` see the [Middlewares](docs/middlewares/overview.md) section.
 
 ### Middleware call sequence
 
@@ -263,7 +263,7 @@ When a request is sent to the server all middlewares added in the ServerLoader, 
 
 ## Dependencies
 
-A controller can depend to an other controllers. Dependencies let you manage each `Controller` as Express Router module.
+A controller can depend to an other controllers. Dependencies lets you manage each `Controller` as Express Router module.
 
 ```typescript
 @Controller("/events")
@@ -363,3 +363,7 @@ export abstract class ChildrenCtrl extends BaseController {
 }
 ```
 
+<div class="guide-links">
+<a href="#/configuration">Configuration</a>
+<a href="#/docs/services/overview">Services</a>
+</div>

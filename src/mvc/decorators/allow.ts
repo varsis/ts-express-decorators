@@ -1,6 +1,6 @@
-import {PropertyRegistry} from "../../converters/registries/PropertyRegistry";
+import {PropertyRegistry} from "../../jsonschema/registries/PropertyRegistry";
 import {Type} from "../../core/interfaces";
-import {ParamRegistry} from "../registries/ParamRegistry";
+import {ParamRegistry} from "../../filters/registries/ParamRegistry";
 
 /**
  * Add allowed values when the property or parameters is required.
@@ -27,18 +27,18 @@ import {ParamRegistry} from "../registries/ParamRegistry";
  * @returns {Function}
  * @decorator
  */
-export function Allow(...allowedValues: any[]): any {
+export function Allow(...allowedRequiredValues: any[]): any {
 
     return (target: Type<any>, propertyKey: string, parameterIndex?: number): void => {
 
         if (typeof parameterIndex === "number") {
             const paramMetadata = ParamRegistry.get(target, propertyKey, parameterIndex);
-            paramMetadata.allowedValues = allowedValues;
+            paramMetadata.allowedRequiredValues = allowedRequiredValues;
 
             ParamRegistry.set(target, propertyKey, parameterIndex, paramMetadata);
         } else {
             const propertyMetadata = PropertyRegistry.get(target, propertyKey);
-            propertyMetadata.allowedValues = allowedValues;
+            propertyMetadata.allowedRequiredValues = allowedRequiredValues;
 
             PropertyRegistry.set(target, propertyKey, propertyMetadata);
         }

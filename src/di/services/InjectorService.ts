@@ -1,16 +1,15 @@
-/**
- * @module common/di
- */
-/** */
 import {$log} from "ts-log-debug";
-import {nameOf} from "../../core";
+import {nameOf, Registry} from "../../core";
 import {Metadata} from "../../core/class/Metadata";
-import {Registry} from "../../core/class/Registry";
-import {Type} from "../../core/interfaces";
+import {ProxyRegistry} from "../../core/class/ProxyRegistry";
+import {Store} from "../../core/class/Store";
+import {Env, Type} from "../../core/interfaces";
+import {promiseTimeout} from "../../core/utils";
 import {Provider} from "../class/Provider";
 import {InjectionError} from "../errors/InjectionError";
-import {IInjectableMethod, IProvider} from "../interfaces";
-import {ProviderRegistry, ProxyProviderRegistry} from "../registries/ProviderRegistry";
+import {InjectionScopeError} from "../errors/InjectionScopeError";
+import {IInjectableMethod, IProvider, IProviderOptions, ProviderScope} from "../interfaces";
+import {ProviderRegistry} from "../registries/ProviderRegistry";
 
 /**
  * This service contain all services collected by `@Service` or services declared manually with `InjectorService.factory()` or `InjectorService.service()`.
@@ -34,7 +33,10 @@ import {ProviderRegistry, ProxyProviderRegistry} from "../registries/ProviderReg
  * > Note: `ServerLoader` make this automatically when you use `ServerLoader.mount()` method (or settings attributes) and load services and controllers during the starting server.
  *
  */
-export class InjectorService extends ProxyProviderRegistry {
+export class InjectorService extends ProxyRegistry<Provider<any>, IProviderOptions<any>> {
+    constructor() {
+        super(ProviderRegistry);
+    }
 
     /**
      * Invoke the class and inject all services that required by the class constructor.
@@ -231,13 +233,16 @@ export class InjectorService extends ProxyProviderRegistry {
      * @param target The injectable class to invoke. Class parameters are injected according constructor signature.
      * @param locals  Optional object. If preset then any argument Class are read from this object first, before the `InjectorService` is consulted.
      * @param designParamTypes Optional object. List of injectable types.
+     * @param requiredScope
      * @returns {T} The class constructed.
      */
-    static invoke<T>(target: any, locals: Map<string | Function, any> = new Map<Function, any>(), designParamTypes?: any[]): T {
+    static invoke<T>(target: any, locals: Map<string | Function, any> = new Map<Function, any>(), designParamTypes?: any[], requiredScope: boolean = false): T {
 
         if (!designParamTypes) {
             designParamTypes = Metadata.getParamTypes(target);
         }
+
+        const parentScope = Store.from(target).get("scope");
 
         const services = designParamTypes
             .map((serviceType: any) => {
@@ -258,6 +263,15 @@ export class InjectorService extends ProxyProviderRegistry {
                     throw new InjectionError(target, serviceName.toString());
                 }
 
+                const provider = ProviderRegistry.get(serviceType)!;
+
+                if (provider.scope === ProviderScope.REQUEST) {
+                    if (requiredScope && !parentScope) {
+                        throw new InjectionScopeError(provider.useClass, target);
+                    }
+                    return this.invoke<any>(provider.useClass, locals, undefined, requiredScope);
+                }
+
                 return this.get(serviceType);
             });
 
@@ -269,10 +283,7 @@ export class InjectorService extends ProxyProviderRegistry {
      * @param target The service to be built.
      */
     static construct<T>(target: Type<any> | symbol): T {
-
         const provider: Provider<any> = ProviderRegistry.get(target)!;
-
-        /* istanbul ignore else */
         return this.invoke<any>(provider.useClass);
     }
 
@@ -282,11 +293,12 @@ export class InjectorService extends ProxyProviderRegistry {
      * @param args List of the parameters to give to each services.
      * @returns {Promise<any[]>} A list of promises.
      */
-    static async emit(eventName: string, ...args: any[]): Promise<any[]> {
+    static async emit(eventName: string, ...args: any[]): Promise<any> {
         const promises: Promise<any>[] = [];
 
-        ProviderRegistry.forEach((provider: IProvider<any>) => {
+        $log.debug("\x1B[1mCall hook", eventName, "\x1B[22m");
 
+        ProviderRegistry.forEach((provider: IProvider<any>) => {
             const service = InjectorService.get<any>(provider.provide);
 
             if (eventName in service) {
@@ -294,11 +306,47 @@ export class InjectorService extends ProxyProviderRegistry {
                 if (eventName === "$onInjectorReady") {
                     $log.warn("$onInjectorReady hook is deprecated, use $onInit hook insteadof. See https://goo.gl/KhvkVy");
                 }
-                promises.push(service[eventName](...args));
+
+                const promise: any = service[eventName](...args);
+
+                /* istanbul ignore next */
+                if (promise && promise.then) {
+                    promises.push(
+                        promiseTimeout(promise, 1000)
+                            .then((result) => InjectorService.checkPromiseStatus(eventName, result, nameOf(provider.useClass)))
+                    );
+                }
             }
         });
 
-        return Promise.all(promises);
+        /* istanbul ignore next */
+        if (promises.length) {
+            $log.debug("\x1B[1mCall hook", eventName, " promises built\x1B[22m");
+
+            return promiseTimeout(Promise.all(promises), 2000)
+                .then((result) => InjectorService.checkPromiseStatus(eventName, result));
+        }
+
+        return Promise.resolve();
+    }
+
+    /**
+     *
+     * @param {string} eventName
+     * @param result
+     * @param {string} service
+     */
+
+    /* istanbul ignore next */
+    private static checkPromiseStatus(eventName: string, result: any, service?: string) {
+        if (!result.ok) {
+            const msg = `Timeout on ${eventName} hook. Promise are unfulfilled ${service ? "on service" + service : ""}`;
+            if (process.env.NODE_ENV === Env.PROD) {
+                throw(msg);
+            } else {
+                setTimeout(() => $log.warn(msg, "In production, the warning will down the server!"), 1000);
+            }
+        }
     }
 
     /**
@@ -316,7 +364,6 @@ export class InjectorService extends ProxyProviderRegistry {
             const useClass = nameOf(provider.useClass);
 
             $log.debug(nameOf(provider.provide), "built", token === useClass ? "" : `from class ${useClass}`);
-
         });
 
         return registry;
@@ -379,14 +426,12 @@ export class InjectorService extends ProxyProviderRegistry {
      * #### Example
      *
      * ```typescript
-     *      import {InjectorService} from "ts-express-decorators";
-     *      import MyService from "./services";
+     * import {InjectorService} from "ts-express-decorators";
+     * import MyService from "./services";
      *
-     *      class OtherService {
+     * class OtherService {
      *    constructor(injectorService: InjectorService) {
-     *
-     *       const exists = injectorService.has(MyService); // true or false
-     *
+     *        const exists = injectorService.has(MyService); // true or false
      *    }
      * }
      * ```
@@ -406,10 +451,10 @@ export class InjectorService extends ProxyProviderRegistry {
             ProviderRegistry,
             (provider) => provider.instance === undefined || provider.type === "service"
         );
+        $log.debug("\x1B[1mProvider registry built\x1B[22m");
 
         return Promise.all([
-            this.emit("$onInit"),
-            this.emit("$onInjectorReady") // deprecated
+            this.emit("$onInit")
         ]);
     }
 
@@ -424,7 +469,7 @@ export class InjectorService extends ProxyProviderRegistry {
     }
 
     /**
-     * Add a new service in the registry. This service will be constructed when `InjectorService` will loaded.
+     * Add a new service in the registry. This service will be constructed when `InjectorService`will loaded.
      *
      * #### Example
      *
@@ -451,11 +496,14 @@ export class InjectorService extends ProxyProviderRegistry {
         InjectorService.set({provide: target, useClass: target, type: "service"});
 
     /**
-     * Add a new factory in `InjectorService` registry.
+     * Add a new factory in
+     `InjectorService`
+     registry.
      *
      * #### Example with symbol definition
      *
-     * ```typescript
+     *
+     ```typescript
      * import {InjectorService} from "ts-express-decorators";
      *
      * export interface IMyFooFactory {
@@ -477,9 +525,12 @@ export class InjectorService extends ProxyProviderRegistry {
      * }
      * ```
      *
-     * > Note: When you use the factory method with Symbol definition, you must use the `@Inject()` decorator to retrieve your factory in another Service. Advice: By convention all factory class name will be prefixed by `Factory`.
+     * > Note: When you use the factory method with Symbol definition, you must use the `@Inject()`
+     * decorator to retrieve your factory in another Service. Advice: By convention all factory class name will be prefixed by
+     * `Factory`.
      *
      * #### Example with class
+     *
      * ```typescript
      * import {InjectorService} from "ts-express-decorators";
      *

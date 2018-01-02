@@ -5,7 +5,25 @@ export class FakeRequest {
     id: number;
     tagId: string;
     _responseData: any;
+    _endpoint: any;
     public accepts = (mime: string) => this.mime === mime;
+
+    public log: Express.RequestLogger = {
+        debug: (scope?: any) => {
+        },
+
+        info: (scope?: any) => {
+        },
+
+        trace: (scope?: any) => {
+        },
+
+        warn: (scope?: any) => {
+        },
+
+        error: (scope?: any) => {
+        }
+    };
 
     /**
      *
@@ -69,12 +87,16 @@ export class FakeRequest {
     }
 
     public getEndpoint() {
-        return {
+        return this._endpoint || {
             store: {
                 get: () => {
                 }
             }
         };
+    }
+
+    public setEndpoint(endpoint: any) {
+        this._endpoint = endpoint;
     }
 
     public end() {
