@@ -1,27 +1,24 @@
-/**
- * @module common/mvc
- */
-/** */
 import * as Express from "express";
 import {$log} from "ts-log-debug";
+import {ServerSettingsService} from "../../config/services/ServerSettingsService";
+import {ProxyRegistry} from "../../core/class/ProxyRegistry";
 import {Type} from "../../core/interfaces";
-import {ExpressApplication} from "../../core/services/ExpressApplication";
-import {Inject} from "../../di";
 import {Service} from "../../di/decorators/service";
+import {ProviderScope} from "../../di/interfaces";
 import {InjectorService} from "../../di/services/InjectorService";
 import {IComponentScanned} from "../../server/interfaces";
-import {ServerSettingsService} from "../../server/services/ServerSettingsService";
 import {ControllerBuilder} from "../class/ControllerBuilder";
 import {ControllerProvider} from "../class/ControllerProvider";
-import {ControllerRegistry, ProxyControllerRegistry} from "../registries/ControllerRegistry";
+import {ExpressApplication} from "../decorators";
+import {IControllerOptions} from "../interfaces";
+import {ControllerRegistry} from "../registries/ControllerRegistry";
 import {RouterController} from "./RouterController";
 
 /**
  * ControllerService manage all controllers declared with `@ControllerProvider` decorators.
  */
 @Service()
-export class ControllerService extends ProxyControllerRegistry {
-
+export class ControllerService extends ProxyRegistry<ControllerProvider, IControllerOptions> {
     /**
      *
      * @param expressApplication
@@ -29,9 +26,9 @@ export class ControllerService extends ProxyControllerRegistry {
      * @param serverSettings
      */
     constructor(private injectorService: InjectorService,
-                @Inject(ExpressApplication) private expressApplication: ExpressApplication,
+                @ExpressApplication private expressApplication: Express.Application,
                 private serverSettings: ServerSettingsService) {
-        super();
+        super(ControllerRegistry);
     }
 
     /**
@@ -91,9 +88,9 @@ export class ControllerService extends ProxyControllerRegistry {
         components.forEach(component => {
             Object.keys(component.classes)
                 .map(clazzName => component.classes[clazzName])
-                .filter(clazz => ControllerRegistry.has(clazz))
+                .filter(clazz => component.endpoint && ControllerRegistry.has(clazz))
                 .map(clazz =>
-                    ControllerRegistry.get(clazz)!.pushRouterPath(component.endpoint)
+                    ControllerRegistry.get(clazz)!.pushRouterPath(component.endpoint!)
                 );
         });
     }
@@ -127,7 +124,7 @@ export class ControllerService extends ProxyControllerRegistry {
 
             const target = provider.useClass;
 
-            if (!provider.scope && provider.instance === undefined) {
+            if (provider.scope === ProviderScope.SINGLETON && provider.instance === undefined) {
                 provider.instance = this.invoke<any>(target);
             }
         });

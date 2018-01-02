@@ -1,6 +1,6 @@
-import {PropertyRegistry} from "../../converters/registries/PropertyRegistry";
+import {PropertyRegistry} from "../../jsonschema/registries/PropertyRegistry";
 import {Type} from "../../core/interfaces";
-import {ParamRegistry} from "../registries/ParamRegistry";
+import {ParamRegistry} from "../../filters/registries/ParamRegistry";
 
 /**
  * Add required annotation for a function argument.
@@ -43,13 +43,13 @@ import {ParamRegistry} from "../registries/ParamRegistry";
  * @returns {Function}
  * @decorator
  */
-export function Required(...allowedValues: any[]): any {
+export function Required(...allowedRequiredValues: any[]): any {
 
     return (target: Type<any>, propertyKey: string, parameterIndex: number): void => {
         if (typeof parameterIndex === "number") {
             ParamRegistry.required(target, propertyKey, parameterIndex);
         } else {
-            PropertyRegistry.required(target, propertyKey, allowedValues);
+            PropertyRegistry.required(target, propertyKey, allowedRequiredValues);
         }
     };
 }

@@ -1,12 +1,7 @@
-import {Sinon} from "../../../tools";
-import * as Proxyquire from "proxyquire";
 import {CookiesFilter} from "../../../../src/filters/components/CookiesFilter";
-
-const ParamRegistry: any = {useService: Sinon.stub(), useFilter: Sinon.stub()};
-
-const {Cookies} = Proxyquire.load("../../../../src/filters/decorators/cookies", {
-    "../../mvc/registries/ParamRegistry": {ParamRegistry}
-});
+import {Cookies} from "../../../../src/filters/decorators/cookies";
+import {ParamRegistry} from "../../../../src/filters/registries/ParamRegistry";
+import {Sinon} from "../../../tools";
 
 class Test {
 
@@ -14,39 +9,21 @@ class Test {
 
 describe("Cookies", () => {
 
-    describe("as parameter decorator", () => {
-        before(() => {
-            this.options = ["test", Test];
-            Cookies(...this.options)(Test, "test", 0);
-        });
+    before(() => {
+        this.decorateStub = Sinon.stub(ParamRegistry, "decorate");
+        Cookies("test", Test);
+    });
 
-        after(() => {
-            ParamRegistry.useFilter.reset();
-        });
+    after(() => {
+        this.decorateStub.restore();
+    });
 
-        it("should call registry method", () =>
-            ParamRegistry.useFilter.should.have.been.called
-        );
-
-        it("should add metadata", () => {
-            ParamRegistry.useFilter.should.have.been.calledWithExactly(CookiesFilter, {
-                target: Test,
-                propertyKey: "test",
-                parameterIndex: 0,
+    it("should have been called ParamFilter.decorate method with the correct parameters", () =>
+        this.decorateStub.should.have.been.calledOnce
+            .and
+            .calledWithExactly(CookiesFilter, {
                 expression: "test",
                 useType: Test
-            });
-        });
-    });
-
-    describe("as other decorator type", () => {
-        before(() => {
-            Cookies()(Test, "test", {});
-        });
-
-        it("should do nothing", () => {
-            !ParamRegistry.useFilter.should.not.have.been.called;
-        });
-    });
-
+            })
+    );
 });

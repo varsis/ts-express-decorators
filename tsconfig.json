@@ -1,8 +1,7 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "module": "commonjs",
-    "target": "es5",
+    "target": "es2015",
     "sourceMap": true,
     "declaration": false,
     "experimentalDecorators": true,
@@ -27,7 +26,8 @@
       "cookie-parser",
       "express",
       "reflect-metadata",
-      "supertest"
+      "supertest",
+      "json-schema"
     ]
   },
   "include": [
@@ -39,6 +39,8 @@
     "multipartfiles",
     "swagger",
     "servestatic",
+    "socketio",
+    "ajv",
     "lib"
   ]
 }

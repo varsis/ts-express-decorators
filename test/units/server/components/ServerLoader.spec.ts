@@ -1,9 +1,11 @@
+import * as Http from "http";
+import * as Https from "https";
+import {SERVER_SETTINGS} from "../../../../src/config/constants/index";
 import {Metadata} from "../../../../src/core/class/Metadata";
-import {HttpServer} from "../../../../src/core/services/HttpServer";
-import {HttpsServer} from "../../../../src/core/services/HttpsServer";
-import {InjectorService} from "../../../../src/di/services/InjectorService";
+import {InjectorService} from "../../../../src/di";
+import {HttpServer} from "../../../../src/server";
 import {ServerLoader} from "../../../../src/server/components/ServerLoader";
-import {SERVER_SETTINGS} from "../../../../src/server/constants/index";
+import {HttpsServer} from "../../../../src/server/decorators/httpsServer";
 import {$logStub, expect, Sinon} from "../../../tools";
 
 describe("ServerLoader", () => {
@@ -34,22 +36,12 @@ describe("ServerLoader", () => {
         this.useStub = Sinon.stub(this.server._expressApp, "use");
         this.setStub = Sinon.stub(this.server._expressApp, "set");
         this.engineStub = Sinon.stub(this.server._expressApp, "engine");
-
-        this.httpServer = InjectorService.get<HttpServer>(HttpServer).get();
-        this.httpsServer = InjectorService.get<HttpsServer>(HttpsServer).get();
     });
 
     after(() => {
         this.useStub.restore();
         this.setStub.restore();
         this.engineStub.restore();
-    });
-
-    it("should add the httpServer in injectorService", () => {
-        this.httpServer.should.be.an("object");
-    });
-    it("should add the httpsServer in injectorService", () => {
-        this.httpsServer.should.be.an("object");
     });
 
     describe("startServer()", () => {
@@ -67,10 +59,6 @@ describe("ServerLoader", () => {
             return this.promise;
         });
 
-        after(() => {
-
-        });
-
         it("should have been called server.listen with the correct params", () => {
             this.createServerStub.listen.should.have.been.calledWithExactly(8080, "0.0.0.0");
         });
@@ -78,6 +66,59 @@ describe("ServerLoader", () => {
         it("should have been called server.on with the correct params", () => {
             this.createServerStub.on.should.have.been.calledWithExactly("listening", Sinon.match.func);
             this.createServerStub.on.should.have.been.calledWithExactly("error", Sinon.match.func);
+        });
+    });
+
+    describe("createHttpsServer", () => {
+        before(() => {
+            this.createServerStub = Sinon.stub(Https, "createServer").returns({server: "server"});
+            this.factoryStub = Sinon.stub(InjectorService, "factory");
+            this.server.createHttpsServer({options: "options"});
+            this.factoryStub.getCall(0).args[1].get();
+        });
+        after(() => {
+            this.createServerStub.restore();
+            this.factoryStub.restore();
+            this.server.settings.httpPort = 8080;
+            this.server.settings.httpsPort = 8000;
+        });
+
+        it("should call createServer method", () => {
+            this.createServerStub.should.have.been.calledWithExactly({options: "options"}, this.server._expressApp);
+        });
+
+        it("should call createServer method", () => {
+            this.factoryStub.should.have.been.calledWithExactly(HttpsServer, {server: "server", get: Sinon.match.func});
+        });
+
+        it("should have a getMethod", () => {
+            expect(this.factoryStub.getCall(0).args[1].get()).to.eq(this.factoryStub.getCall(0).args[1]);
+        });
+    });
+
+    describe("createHttpServer", () => {
+        before(() => {
+            this.createServerStub = Sinon.stub(Http, "createServer").returns({server: "server"});
+            this.factoryStub = Sinon.stub(InjectorService, "factory");
+            this.server.createHttpServer({options: "options"});
+        });
+        after(() => {
+            this.createServerStub.restore();
+            this.factoryStub.restore();
+            this.server.settings.httpPort = 8080;
+            this.server.settings.httpsPort = 8000;
+        });
+
+        it("should call createServer method", () => {
+            this.createServerStub.should.have.been.calledWithExactly(this.server._expressApp);
+        });
+
+        it("should call createServer method", () => {
+            this.factoryStub.should.have.been.calledWithExactly(HttpServer, {server: "server", get: Sinon.match.func});
+        });
+
+        it("should have a getMethod", () => {
+            expect(this.factoryStub.getCall(0).args[1].get()).to.eq(this.factoryStub.getCall(0).args[1]);
         });
     });
 
@@ -130,19 +171,12 @@ describe("ServerLoader", () => {
         });
 
         it("should have classes attributs", () => {
-            expect(this.server._components[0].classes).to.be.an("object");
-            expect(this.server._components[0].classes).to.have.property("FakeCtrl");
-            expect(this.server._components[0].classes.FakeCtrl).to.be.a("function");
+            expect(this.server._components[0].classes[0]).to.be.a("function");
         });
 
         it("should have endpoint attributs", () => {
             expect(this.server._components[0].endpoint).to.eq("/context");
         });
-
-        it("should have file attributs", () => {
-            expect(this.server._components[0].file).to.eq(__dirname + "/data/FakeCtrl.js");
-        });
-
     });
 
     describe("mount()", () => {
@@ -180,6 +214,27 @@ describe("ServerLoader", () => {
                     .calledWithExactly("path/to/*.js", "endpoint")
                     .and
                     .calledWithExactly("path2/to/*.js", "endpoint");
+            });
+        });
+
+        describe("when we give a class", () => {
+            before(() => {
+                this.classTest = class {
+                };
+                this.addComponentsStub = Sinon.stub(this.server, "addComponents");
+
+                this.server.mount("endpoint", [this.classTest]);
+            });
+
+            after(() => {
+                this.addComponentsStub.restore();
+            });
+
+            it("should have been called the addComponents method", () => {
+                this.addComponentsStub.should.be
+                    .calledOnce
+                    .and
+                    .calledWithExactly([this.classTest], {endpoint: "endpoint"});
             });
         });
     });
@@ -304,12 +359,38 @@ describe("ServerLoader", () => {
         });
     });
 
-    describe("deprecated methods", () => {
-        it("should have been called", () => {
-            this.server.onError();
-            this.server.setHttpPort(8080);
-            this.server.setHttpsPort(8080);
-            this.server.setEndpoint("/rest");
+    describe("file()", () => {
+        before(() => {
+            this.compilerBackup = require.extensions[".ts"];
+        });
+        after(() => {
+            require.extensions[".ts"] = this.compilerBackup;
+        });
+        describe("when haven't typescript compiler", () => {
+            before(() => {
+                this.compiler = require.extensions[".ts"];
+                delete require.extensions[".ts"];
+            });
+            after(() => {
+                require.extensions[".ts"] = this.compiler;
+            });
+            it("should return file.js", () => {
+                expect(ServerLoader.file("file.ts")).to.eq("file.js");
+            });
+        });
+        describe("when have typescript compiler", () => {
+            before(() => {
+                this.compiler = require.extensions[".ts"];
+                require.extensions[".ts"] = function () {
+                };
+            });
+            after(() => {
+                delete require.extensions[".ts"];
+                require.extensions[".ts"] = this.compiler;
+            });
+            it("should return file.ts", () => {
+                expect(ServerLoader.file("file.ts")).to.eq("file.ts");
+            });
         });
     });
 });

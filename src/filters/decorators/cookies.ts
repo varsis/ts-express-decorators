@@ -1,10 +1,11 @@
 /**
  * @module common/filters
- */ /** */
+ */
+/** */
 
-import {Type} from "../../core/interfaces/Type";
-import {ParamRegistry} from "../../mvc/registries/ParamRegistry";
 import {CookiesFilter} from "../components/CookiesFilter";
+import {ParamRegistry} from "../registries/ParamRegistry";
+
 /**
  * Cookies o CookiesParams return the value from [request.cookies](http://expressjs.com/en/4x/api.html#req.cookies) object.
  *
@@ -42,23 +43,9 @@ import {CookiesFilter} from "../components/CookiesFilter";
  * @returns {Function}
  */
 export function CookiesParams(expression?: string | any, useType?: any): Function {
-
-    return <T>(target: Type<T>, propertyKey: string | symbol, parameterIndex: number): void => {
-
-        if (typeof parameterIndex === "number") {
-
-            ParamRegistry.useFilter(CookiesFilter, {
-                target,
-                propertyKey,
-                parameterIndex,
-                expression,
-                useType
-            });
-
-        }
-
-    };
+    return ParamRegistry.decorate(CookiesFilter, {expression, useType});
 }
+
 /**
  * Cookies o CookiesParams return the value from [request.cookies](http://expressjs.com/en/4x/api.html#req.cookies) object.
  *

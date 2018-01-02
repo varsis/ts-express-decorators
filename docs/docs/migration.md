@@ -1,11 +1,13 @@
 # Migration
 
+See release note on Github: https://github.com/Romakita/ts-express-decorators/releases
+
 ## From v1.x to v2.x
 
 - ServerLoader.isAuthenticated hooks is removed. Use ServerLoader.$onAuth hook instead of.
 - Interface IPromise is removed. Use Promise instead of.
 - Interface ICrud is removed.
-- ServerLoader.AcceptMime() is removed. Use GlobalAcceptMimesMiddleware instead of (see documentation https://romakita.github.io/ts-express-decorators/#/docs/middlewares/global-middleware). 
+- ServerLoader.AcceptMime() is removed. Use GlobalAcceptMimesMiddleware instead of (see documentation https://romakita.github.io/ts-express-decorators#/docs/middlewares/global-middleware). 
 - Update [ts-log-debug](https://romakita.github.io/ts-log-debug) to the new major version.
 
 ## From v1.3 or under to v1.4

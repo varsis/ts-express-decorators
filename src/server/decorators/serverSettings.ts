@@ -5,8 +5,8 @@
 
 import {Metadata} from "../../core/class/Metadata";
 import {Type} from "../../core/interfaces/Type";
-import {SERVER_SETTINGS} from "../constants/index";
-import {IServerSettings} from "../interfaces/IServerSettings";
+import {SERVER_SETTINGS} from "../../config/constants/index";
+import {IServerSettings} from "../../config/interfaces/IServerSettings";
 
 /**
  * `@ServerSettings` let you to configure quickly your server via decorator. This decorator take your configuration and merge it with the default server configuration.
@@ -18,7 +18,6 @@ import {IServerSettings} from "../interfaces/IServerSettings";
  *    "env": "development",
  *    "port": 8080,
  *    "httpsPort": 8000,
- *    "endpointUrl": "/rest",
  *    "uploadDir": "${rootDir}/uploads",
  *    "mount": {
  *      "/rest": "${rootDir}/controllers/**\/*.js"
@@ -68,6 +67,7 @@ import {IServerSettings} from "../interfaces/IServerSettings";
  * * `componentsScan` &lt;string[]&gt;: List of directories to scan [Services](docs/services/ovierview.md), [Middlewares](docs/middlewares/ovierview.md) or [Converters](docs/converters.md).
  * * `serveStatic` &lt;[IServerMountDirectories](api/common/server/iservermountdirectories.md)&gt;: Objet to mount all directories under to his endpoints. See more on [Serve Static](tutorials/serve-static-files.md).
  * * `routers` &lt;object&gt;: Global configuration for the Express.Router. See express [documentation](http://expressjs.com/en/api.html#express.router).
+ * * `validationModelStrict` &lt;boolean&gt;: Use a strict validation when a model is used by the converter. When a property is unknow, it throw a BadRequest. By default true.
  *
  * @param settings
  * @returns {(target:any)=>any}

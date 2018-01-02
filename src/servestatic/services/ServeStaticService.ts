@@ -1,18 +1,13 @@
-/**
- * @module servestatic
- */
-/** */
-import {ExpressApplication} from "../../core/services/ExpressApplication";
-import {Inject} from "../../di/decorators/inject";
+import * as Express from "express";
+import {ServerSettingsService} from "../../config/services/ServerSettingsService";
 import {Service} from "../../di/decorators/service";
-import {ServerSettingsService} from "../../server/services/ServerSettingsService";
+import {ExpressApplication} from "../../mvc/decorators";
 
 @Service()
 export class ServeStaticService {
 
-    constructor(@Inject(ExpressApplication) private expressApp: ExpressApplication,
+    constructor(@ExpressApplication private expressApp: Express.Application,
                 private serverSettingsService: ServerSettingsService) {
-
     }
 
     $afterRoutesInit() {

@@ -5,12 +5,10 @@
 
 import * as Express from "express";
 import {Exception} from "ts-httpexceptions";
-import {$log} from "ts-log-debug";
+import {Err} from "../../filters/decorators/error";
+import {Request} from "../../filters/decorators/request";
+import {Response} from "../../filters/decorators/response";
 import {MiddlewareError} from "../decorators/class/middlewareError";
-import {Err} from "../decorators/param/error";
-import {Next} from "../decorators/param/next";
-import {Request} from "../decorators/param/request";
-import {Response} from "../decorators/param/response";
 import {IMiddlewareError} from "../interfaces";
 
 /**
@@ -26,7 +24,13 @@ export class GlobalErrorHandlerMiddleware implements IMiddlewareError {
         const toHTML = (message = "") => message.replace(/\n/gi, "<br />");
 
         if (error instanceof Exception || error.status) {
-            $log.error("" + error);
+            request.log.error({
+                error: {
+                    message: error.message,
+                    stack: error.stack,
+                    status: error.status
+                }
+            });
             response.status(error.status).send(toHTML(error.message));
             return;
         }
@@ -36,7 +40,13 @@ export class GlobalErrorHandlerMiddleware implements IMiddlewareError {
             return;
         }
 
-        $log.error(error);
+        request.log.error({
+            error: {
+                status: 500,
+                message: error.message,
+                stack: error.stack
+            }
+        });
         response.status(error.status || 500).send("Internal Error");
 
         return;

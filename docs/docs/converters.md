@@ -1,8 +1,8 @@
 # Converters
 
-The decorator `@JsonProperty` let you to customize serialization and deserialization property when Ts.ED send data as JSON.
+The decorator `@JsonProperty` or `@Property` lets you customize serialization and deserialization property when Ts.ED send or receive data as JSON.
 
-All following decorators use `@JsonProperty` metadata to deserialize a Plain Object JavaScript to his Model:
+All following decorators use `@Property` metadata to deserialize a Plain Object JavaScript to his Model:
 
 - `@PathParams(expression?: string)`, 
 - `@BodyParams(expression?: string)`, 
@@ -38,34 +38,31 @@ In second place, create a new file in your `converters` folder. Create a new cla
 
 ## Define a model
 
-`@JsonProperty()` let you decorate an attribute. By default, no parameters are required to use it. But in some cases, we need to configure explicitly the JSON attribute name mapped to the class attribut. Here an example of different use cases with `@JsonProperty()`:
+`@JsonProperty()` lets you decorate an attribute. By default, no parameters are required to use it. But in some cases, we need to configure explicitly the JSON attribute name mapped to the class attribut. Here an example of different use cases with `@JsonProperty()`:
 
 ```typescript
 class EventModel {
-
-    @JsonProperty()
+    
     @Required()
     name: string;
      
-    @JsonProperty('startDate')
+    @PropertyName('startDate')
     startDate: Date;
 
-    @JsonProperty({name: 'end-date'})
+    @Property({name: 'end-date'})
     endDate: Date;
 
-    @JsonProperty({use: Task})
+    @PropertyType(Task)
     @Required()
     @Allow(null)
     tasks: TaskModel[];
 }
 
 class TaskModel {
-    @JsonProperty()
     @Required()
     subject: string;
     
-    @JsonProperty()
-    @Required()
+    @Property()
     rate: number;
 }
 ```
@@ -98,7 +95,7 @@ export class EventCtrl {
 
 ## Create a custom converter
 
-`@Converter(...targetTypes)` let you to define some converters for a certain type/Class. It useful for a generic conversion.
+`@Converter(...targetTypes)` lets you define some converters for a certain type/Class. It useful for a generic conversion.
 
 ### Simple type
 Here an example to create a custom converter for the Date type:
@@ -252,3 +249,12 @@ class Foo implements IConverter {
     }
 }
 ```
+
+## Built-in converters
+
+See in [Built-in converters](api/index.md?query=keywords_Converter|type_class) in our API references.
+
+<div class="guide-links">
+<a href="#/docs/services/overview">Controllers</a>
+<a href="#/docs/middlewares/overview">Middlewares</a>
+</div>

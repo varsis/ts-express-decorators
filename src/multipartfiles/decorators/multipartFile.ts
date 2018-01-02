@@ -1,14 +1,10 @@
-/**
- * @module multiparfiles
- */
-/** */
-
+import * as multer from "multer";
 import {Metadata} from "../../core/class/Metadata";
 import {Store} from "../../core/class/Store";
 import {Type} from "../../core/interfaces";
 import {descriptorOf} from "../../core/utils";
+import {ParamRegistry} from "../../filters/registries/ParamRegistry";
 import {UseBefore} from "../../mvc/decorators/method/useBefore";
-import {ParamRegistry} from "../../mvc/registries/ParamRegistry";
 import {MultipartFileFilter} from "../filters/MultipartFileFilter";
 import {MultipartFilesFilter} from "../filters/MultipartFilesFilter";
 import {MultipartFileMiddleware} from "../middlewares/MultipartFileMiddleware";
@@ -19,7 +15,7 @@ import {MultipartFileMiddleware} from "../middlewares/MultipartFileMiddleware";
  * @returns {(target:Type<T>, propertyKey:string, parameterIndex:number)=>void}
  * @decorator
  */
-export function MultipartFile(options?: any): Function {
+export function MultipartFile(options?: multer.Options): Function {
     return <T>(target: Type<T>, propertyKey: string, parameterIndex: number): void => {
 
         if (typeof parameterIndex === "number") {
